@@ -14,8 +14,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -37,12 +39,17 @@ public class Controlling extends Activity {
     private Button mBtnDisconnect;
     private BluetoothDevice mDevice;
 
-    final static String on="92";//on
-    final static String off="79";//off
+    final static String on="1";//on
+    final static String off="2";//off
 
 
     private ProgressDialog progressDialog;
-    Button btnOn,btnOff;
+    Button sendButton;
+    EditText editText;
+    TextView  mTxtReceive;
+    Boolean changeEditText = false;
+
+    Integer count = 0;
 
 
     @Override
@@ -52,8 +59,9 @@ public class Controlling extends Activity {
 
         ActivityHelper.initialize(this);
         // mBtnDisconnect = (Button) findViewById(R.id.btnDisconnect);
-        btnOn=(Button)findViewById(R.id.on);
-        btnOff=(Button)findViewById(R.id.off);
+        editText=(EditText)findViewById(R.id.editTextSendData);
+        sendButton=(Button)findViewById(R.id.sendButton);
+        mTxtReceive = (TextView) findViewById(R.id.txtReceive);
 
 
 
@@ -70,7 +78,7 @@ public class Controlling extends Activity {
 
 
 
-        btnOn.setOnClickListener(new View.OnClickListener()
+        sendButton.setOnClickListener(new View.OnClickListener()
         {
 
             @Override
@@ -80,25 +88,10 @@ public class Controlling extends Activity {
 
 
                 try {
-                    mBTSocket.getOutputStream().write(on.getBytes());
+                    mBTSocket.getOutputStream().write(editText.getText().toString().getBytes());
+                    changeEditText = true;
+                    Log.d("sss","" + mBTSocket.getInputStream().read());
 
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }});
-
-        btnOff.setOnClickListener(new View.OnClickListener()
-        {
-
-            @Override
-            public void onClick(View v) {
-// TODO Auto-generated method stub
-
-
-
-                try {
-                    mBTSocket.getOutputStream().write(off.getBytes());
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -131,10 +124,12 @@ public class Controlling extends Activity {
 
             try {
                 inputStream = mBTSocket.getInputStream();
+                Log.d("SSS",""+inputStream);
                 while (!bStop) {
                     byte[] buffer = new byte[256];
                     if (inputStream.available() > 0) {
                         inputStream.read(buffer);
+                        Log.d("SSS",""+buffer);
                         int i = 0;
                         /*
                          * This is needed because new String(buffer) is taking the entire buffer i.e. 256 chars on Android 2.3.4 http://stackoverflow.com/a/8843462/1287554
@@ -142,11 +137,21 @@ public class Controlling extends Activity {
                         for (i = 0; i < buffer.length && buffer[i] != 0; i++) {
                         }
                         final String strInput = new String(buffer, 0, i);
+                        Log.d("SSS",""+strInput);
 
                         /*
                          * If checked then receive text, better design would probably be to stop thread if unchecked and free resources, but this is a quick fix
                          */
 
+                            mTxtReceive.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    //if (changeEditText){
+                                    mTxtReceive.setText("" + ++count +" "+strInput);
+                                    //changeEditText = false;
+                                    //}
+                                }
+                            });
 
 
                     }
